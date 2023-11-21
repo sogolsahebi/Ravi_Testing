@@ -1,0 +1,339 @@
+---
+title: "QC Analysis of ICB_Ravi mae"
+author: "Nasim Bondar Sahebi"
+date: "2023-11-07"
+output:
+  pdf_document: default
+  html_document: default
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+
+# Install and Load Libraries
+
+```{r libraries}
+
+# Load libraries
+library(ggplot2)
+library(dplyr)
+library(MultiAssayExperiment) 
+library(limma)
+library(EnhancedVolcano)
+library(DT)
+library(RColorBrewer)
+library(readr)
+
+```
+
+
+# Data Loading and Preparation
+
+## Load Gene Expression Data
+
+#### Data Overview
+
+  - **Study Reference**: [PubMed ID 37024582](https://pubmed.ncbi.nlm.nih.gov/37024582/)
+  - **Patient Count (RNA)**: 152
+  - **Treatment Details**:
+  - **PD-1/PD-L1**: 130 patients
+  - **IO+chemo**: 2 patients
+  - **IO+combo**: 16 patients
+  - **Not Available (NA)**: 4 patients
+
+
+Load multiassay .rds file, extract clinical, expression data, and annotations; prepare gene expression data for analysis.
+
+```{r load-expression-data}
+# Load your multiassay result and extract clinical data , expression data and annotation
+
+#load mae obj
+mae <- readRDS("~/BHK lab/Ravi_version2/data/ICB_Ravii.rds")
+
+#extract Clinical data 
+clin <- data.frame(colData(mae))
+
+#extract the expression data
+expr <- assays(mae)[["expr"]]
+
+#extracting the annotation 
+annot <- data.frame(rowData(mae@ExperimentList$expr))
+
+# Display first few rows of the dataset
+head(expr)
+```
+
+# Principal Component Analysis (PCA)
+
+## Objective
+Perform PCA on gene expression data to assess variation across different research centers. 
+
+## Data Preparation
+
+Following the methodologies outlined in the "RNA-seq differential expression analysis" section of the referenced paper, the following steps were taken to prepare our gene expression data for Principal Component Analysis (PCA):
+
+1. **Restrict to protein-coding genes.**
+2. **Convert expression data**: Convert from `log2(TPM+0.001)` to `log2(TPM+1)` for consistency.
+3. **Remove low/zero expression genes**: Keep genes with expression at `log2TPM ≥ 0.5` across at least 30% of samples.
+
+
+```{r}
+# Step 1: Restrict to Protein-Coding Genes
+# Filter out non-protein-coding transcripts for focused analysis
+annot_proteincoding <- annot[annot$gene_type == "protein_coding",] # 1586protein coding genes as mention in paper too!
+expr <- expr[rownames(expr) %in% rownames(annot_proteincoding),]
+
+# Step 2: Normalize Expression Data
+# Convert from expr (log2(TPM + 0.001)) to standard log2(TPM + 1) format
+expr_original <- 2**expr - 0.001
+expr <- log2(expr_original + 1)
+
+# Step 3: Filter Low/Zero Expression Genes
+# Retain genes expressed in at least 30% of the samples (as per study criteria)
+threshold_samples <- ceiling(ncol(expr) * 0.3)
+genes_above_threshold <- rowSums(expr >= 0.5)
+expr <- expr[genes_above_threshold >= threshold_samples, ]
+
+# Step 4: Transpose Data for PCA
+# Position samples as rows and genes as columns
+expr_m <- t(expr)
+```
+
+## Perform PCA
+
+```{r perform-pca}
+# Calculate PCA 
+pc <- prcomp(expr_m, center = TRUE, scale. = TRUE)
+
+# Calculate and print the percentage of variance explained by each principal component
+var_res <- pc$sdev^2 / sum(pc$sdev^2) * 100
+var_res <- round(var_res, 2)  # Round to 2 decimal places
+
+print(var_res)
+
+```
+
+# Clinical Data Processing
+
+## Subseting clinical data
+
+```{r load-clinical-data}
+# Subsetting 'clin' data frame to include only 'patientid' and 'Institution' columns
+
+clin_subset <- clin[, c("patientid", "Institution")]
+clin_subsetresponse <-clin[, c("patientid", "response")]
+
+```
+
+## Merge PCA and Clinical Data 
+
+```{r merge-data}
+# Merge PCA results with clinical data
+pcx <- data.frame(pc$x)
+pcx$patientid <- rownames(pcx)
+pcx$patientid <- gsub("\\_", "-", pcx$patientid)
+
+pcx_merge <- merge(pcx, clin_subset, by="patientid")
+rownames(pcx_merge) <- pcx_merge[,1]
+pcx_merge <- pcx_merge[,-1] # institution column is added
+
+```
+
+
+# Visualization
+
+## Bar Plot
+
+- Create a bar plot to visualize variance by each principal component.
+
+The bar plot displays PC1 as the longest, explaining the most variance, while subsequent bars (PC2, PC3, etc.) become progressively shorter, indicating diminishing variance. It serves as a visual representation of the commonly used scree plot in PCA for selecting optimal principal components.
+
+
+```{r scree-plot}
+#To find the largest PC of data
+
+barplot(var_res, main="Bar Plot", xlab="Principal Component", ylab="Percentage of Variance ", col="skyblue")
+```
+
+## PCA Results Plot
+
+
+PCA on gene expression data, shows that the 'Institution' factor has no significant effect on gene expression data sampling.
+(no Batch effect has been detected)
+
+
+```{r pca-results-plot}
+# Create labels for the plot
+xlab_text <- paste("PC1 (", var_res[1], "%)", sep = "")
+ylab_text <- paste("PC2 (", var_res[2], "%)", sep = "")
+
+# Plot PCA results
+ggplot(pcx_merge, aes(PC1, PC2, color = Institution)) +
+  theme_bw() +
+  geom_point() +
+  labs(x = xlab_text, y = ylab_text)
+
+```
+
+#2.Limma approach and Volcano plot 
+
+
+```{r diff expression, include=TRUE, result = TRUE}
+
+# Remove rows with missing values in response and expression data
+na_response <- is.na(clin$response)
+
+# Create filtered response data by excluding rows with response missing values
+filtered_response <- clin$response[!na_response] 
+
+# Access the expression data and exclude rows with missing response values
+filtered_expression <- expr[, !na_response] #27 rows removed due to missing response values
+ 
+
+# Create a design matrix using the filtered response data
+design <- model.matrix(~ filtered_response)
+
+# Fit a linear model using the filtered expression data and the design matrix
+fit <- lmFit(filtered_expression, design)
+
+# Perform eBayes analysis
+fit <- eBayes(fit)
+
+# The 'topTable' function displays the top portion of the results
+topTable(fit)
+
+# To display the results in a table format, you can use 'datatable'
+datatable(topTable(fit))
+
+
+#Top table only shows the top portion of the results
+topTable(fit)
+datatable(topTable(fit))
+
+
+```
+
+Preparing Data for volcano Plot 
+
+Convert fit to Data frame and add column gene_name symbol
+
+```{r prepare volcano, include=TRUE, result = TRUE}
+
+# Retrieve all results from the analysis
+volcano_data <- topTable(fit, number=Inf) 
+
+# Convert the result to a data frame
+df <- as.data.frame(volcano_data)
+
+# Subset 'gene_id' and 'gene_name' from the gene data
+subset_annot <- annot_proteincoding[, c("gene_id", "gene_name")]
+
+# Add a 'gene_id' column to the volcano_data
+volcano_data$gene_id <- rownames(volcano_data)
+
+# Merge 'volcano_data' and 'annot_proteincoding' by 'gene_id'
+merge_result <- merge(volcano_data, subset_annot, by= "gene_id")
+
+# Display the merged result in a table format
+datatable(merge_result)
+
+```
+
+Volcano Plot1. 
+
+plot Volacnot plot based on P value 
+
+```{r volcan plot, include=TRUE, result = TRUE}
+
+EnhancedVolcano(merge_result,
+    lab = merge_result$gene_name,
+    x = 'logFC',
+    y = 'P.Value')
+
+```
+
+Volcano Plot2. 
+
+plot Volacnot plot based on "FDR"
+
+```{r volcanplot2, include=TRUE, result = TRUE}
+
+
+
+EnhancedVolcano(merge_result,
+    lab = merge_result$gene_name,
+    x = 'logFC',
+    y = 'adj.P.Val')
+
+```
+#Figure 1 of paper
+
+- Figure 1(a):Clinical characteristics in SU2C-MARK cohort.
+- Figure 1(b):BOR by PDL1 TPS category.
+
+First 1.(a)_RNA cohort in different institutions.
+
+```{r piechart , include=TRUE, result = TRUE}
+
+
+clin <- data.frame(colData(mae))
+clin_subset <-clin[,c("Institution","rna")]
+
+
+# Counting the occurrences of each institution
+institution_counts <- table(clin_subset$Institution)
+
+# Creating the pie chart
+pie_chart <- ggplot(clin_subset, aes(x = "", fill = factor(Institution))) +
+  geom_bar(width = 1, stat = "count") +
+  coord_polar("y", start = 0) +
+  theme_void() +
+  theme(legend.title = element_blank()) +
+  scale_fill_manual(values = c("#999999", "#E69F00", "#56B4E9",
+                               "#009E73", "#F0E442", "#0072B2",
+                               "#D55E00", "#CC79A7", "#999999",
+                               "#999999", "#999999", "#999999",
+                               "#999999", "#999999", "#999999"))
+
+# Printing the pie chart
+print(pie_chart)
+
+```
+
+
+Figure 1(b):BOR/recist by PDL1 TPS category.
+
+
+```{r bar plot, include=TRUE, result = TRUE}
+
+
+# Select only the necessary columns
+clin <- clin[, c("PDL1_TPS_Description", "recist", "PDL1_TPS")]
+
+# Convert NA values to a specific level
+clin$PDL1_TPS_Description <- forcats::fct_explicit_na(clin$PDL1_TPS_Description, na_level = "Unknown")
+clin$PDL1_TPS_Description <- factor(clin$PDL1_TPS_Description, levels = c("<1%", "1-49%", ">50%", "Unknown"))
+
+clin$recist <- forcats::fct_explicit_na(clin$recist, na_level = "NE")
+
+# Count the occurrences of combinations of 'PDL1_TPS_Description' and 'recist'
+# Note: Do not quote the column names
+counted_data <- dplyr::count(clin, PDL1_TPS_Description, recist)
+
+# Group by 'PDL1_TPS_Description' and calculate frequencies
+grouped_data <- group_by(counted_data, PDL1_TPS_Description)
+data_summary <- mutate(grouped_data, freq = n / sum(n))
+
+# Plotting
+ggplot(data_summary, aes(x = PDL1_TPS_Description, y = freq, fill = recist)) +
+  geom_bar(stat = "identity") +
+  scale_y_continuous(labels = scales::percent) +
+  labs(x = "PDL1 TPS", y = "BOR Proportion", fill = "RECIST Category") +
+  geom_text(aes(label = scales::percent(freq)), position = position_stack(vjust = 0.5)) +
+  theme_minimal()
+
+
+```
