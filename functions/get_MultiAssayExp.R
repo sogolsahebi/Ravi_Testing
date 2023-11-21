@@ -10,8 +10,7 @@ get_MultiAssayExp <- function(study, expr_with_counts_isoforms=FALSE){
 
 
   #path <- "https://raw.githubusercontent.com/BHKLAB-DataProcessing/ICB_Common/main/data/DATASET_LOAD_INFO.csv"
-  #DATASET_LOAD_INFO <- read_delim(path, delim = ";", escape_double = FALSE, trim_ws = TRUE)
-  
+  #DATASET_LOAD_INFO <-read_delim("data/DATASET_LOAD_INFO (2).csv", delim = ";", escape_double = FALSE, trim_ws = TRUE)
   
   # Create a new row for Ravi 
   #new_row <- data.frame(
@@ -25,6 +24,9 @@ get_MultiAssayExp <- function(study, expr_with_counts_isoforms=FALSE){
   #  mutsig_bool = FALSE, 
   # WES.comment = NA,
   # stringsAsFactors = FALSE)
+  
+  #adding to DATASET_LOAD_INFO 
+  #DATASET_LOAD_INFO <- rbind(DATASET_LOAD_INFO, new_row)
   
   #for Ravi we have :
   study = "Ravi" 
