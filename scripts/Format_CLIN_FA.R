@@ -25,7 +25,8 @@ file_path <- "~/BHK lab/Ravi_Testing/files/CLIN.txt"
 # Load the clinical merged data from the given file path.
 #clin_merge_data <- read.csv( file.path(input_dir, "CLIN.txt") , stringsAsFactors=FALSE , sep="\t" )
 
-clin_merge_data <- read.table( file_path , stringsAsFactors=FALSE , sep="\t" )
+clin_merge_data <- read.table( file_path , stringsAsFactors=FALSE , sep="\t")
+
 
 # Data Curating
 # Select the required columns for further analysis.
@@ -110,14 +111,14 @@ print(unique(clin$drug_type))
 clin[clin == ""] <- NA
 
 # Replace hyphens in the row names of 'clin' with underscores
-######################## comment: clin$patient needs to be fixed as well, ow not matched samples' name between clin and expr data #########################
-clin$patient <- str_replace_all(clin$patient, '-', '_') #? not sure
+clin$patient <- str_replace_all(clin$patient,"-", "_")
 
 # Save the processed data as CLIN.csv file
 #write.csv(clin , file=file.path(output_dir, "CLIN.csv") , row.names=TRUE )
 
 file <- "~/BHK lab/Ravi_Testing/files/CLIN.csv"
 write.csv(clin, file, row.names = TRUE)
+
 
 
 

@@ -17,7 +17,6 @@ library(data.table)
 path <- "~/BHK lab/Ravi_Testing/files/EXPR.txt.gz"
 expr <- read.csv(path, stringsAsFactors=FALSE , sep="\t" )
 
-
 # Data Cleaning
 # Convert column names: replace periods with hyphens.
 colnames(expr) <- gsub("\\.", "-", colnames(expr)) 

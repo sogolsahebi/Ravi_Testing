@@ -33,18 +33,25 @@ format_se <- function(assay, coldata, assay_type, convert_gene_name=TRUE, is_iso
   
   
   #add
+  colnames(expr) <- str_replace_all(colnames(expr), '[-\\.]', '_')
+  rownames(clin) <- str_replace_all(rownames(clin), '[-\\.]', '_')
   patient = intersect( colnames(expr) , rownames(clin) )
+  colnames(expr)
+  rownames(clin)
+  patient
   coldata = clin[ patient , ]
-  dim(coldata)
-  dim(clinical2)
   
-  #add
+  
   assay = expr
+  assay_type = "expr"
   
   for(renamed_col in names(renamed_cols)){
     colnames(coldata)[colnames(coldata) == renamed_col] <- renamed_cols[[renamed_col]]
   }
   
+  
+  #loag genecode version 19 
+  load("~/BHK lab/Annotation/Gencode.v19.annotation (2).RData")
   gene_ids <- c()
   features_df <- features_gene
   
@@ -94,15 +101,19 @@ format_se <- function(assay, coldata, assay_type, convert_gene_name=TRUE, is_iso
   #add (maybe redunanatnt since later is coneverting to  data table) data,table??
   rownames(assay_genes) <- assay_genes$gene_id
   rownames(assay_genes)
-  view(assay_genes)
+  
+  library(data.table)
+  assay_genes <- assay_genes[order(rownames(assay_genes)), ]
+  
+  #check this
+  #assay_genes[, gene_id_no_ver := gsub("\\..*$", "", gene_id)]
+  
+  #assay_genes[
+  #  is.na(start),
+  #  c("start", "end", "length", "strand") := list(-1, -1, 0, "*")
+  #]
   
 
-  assay_genes <- assay_genes[order(rownames(assay_genes)), ]
-  assay_genes <- assay_genes[, gene_id_no_ver := gsub("\\..*$", "", gene_id)]
-  assay_genes[
-    is.na(start),
-    c("start", "end", "length", "strand") := list(-1, -1, 0, "*")
-  ]
   assay_genes <- assay_genes[order(assay_genes$gene_id), ]
   
   row_ranges <- makeGRangesFromDataFrame(
@@ -124,11 +135,11 @@ format_se <- function(assay, coldata, assay_type, convert_gene_name=TRUE, is_iso
   summary(row_ranges)
   dim(assay_list[["expr"]])
   dim(coldata)
-  dim(clin_data2)
 
   length(row_ranges)
   
   S1 <- SummarizedExperiment(assays=assay_list, colData=coldata, rowRanges=row_ranges)
+  
   
   
   return(SummarizedExperiment(assays=assay_list, colData=coldata, rowRanges=row_ranges))
@@ -139,6 +150,7 @@ format_se <- function(assay, coldata, assay_type, convert_gene_name=TRUE, is_iso
 
 
 Create_EXP_SummarizedExperiment = function( study, case , clin, expr, feat_snv, feat_cna, feat_cin, snv_bool, cna_bool, is_isoform=FALSE ){
+  
   
 
   rownames(clin) = clin$patient
@@ -153,19 +165,21 @@ Create_EXP_SummarizedExperiment = function( study, case , clin, expr, feat_snv, 
   #add
   rownames(clin)
   rownames(clin) <- str_replace_all(rownames(clin), '[-\\.]', '_')
+  colnames(expr) <- str_replace_all(colnames(expr), '[-\\.]', '_')
   patient = intersect( colnames(expr) , rownames(clin) )
-  
-  clin2 = clin[ patient , ]
+  patient
+  colnames(expr)
+  clin = clin[ patient , ]
   expr = expr[ , patient ]
 
   
   #add add is_isoform to FALSE and conver_gene_Name = FLASE
   
-  return(format_se(assay=expr, coldata=clin2, assay_type='expr', convert_gene_name= FALSE, is_isoform=FALSE))
+  return(format_se(assay=expr, coldata = clin , assay_type='expr', convert_gene_name= FALSE, is_isoform=FALSE))
 }
 
 
-Create_SummarizedExperiments = function( study , expr_bool , snv_bool , cna_bool, cin_bool , coverage , indel_bool, expr_with_counts_isoforms ){
+Create_SummarizedExperiments = function( study , input_dir, expr_bool , snv_bool , cna_bool, cin_bool , coverage , indel_bool, expr_with_counts_isoforms ){
   
   
   # Path to processed data 
@@ -175,31 +189,15 @@ Create_SummarizedExperiments = function( study , expr_bool , snv_bool , cna_bool
   #snv_file = paste( input_dir , "SNV.csv" , sep="/" )
   #cna_file = paste( input_dir , "CNA_gene.csv" , sep="/" )
   
-  #add
-  clin_file = clin
-  expr_file = expr
-  case_file = case
-
   feat_snv <- NA
   feat_cna <- NA
   feat_cin <- NA
   
   se_list <- list()
-  
-  
-  #add
-  clin$tissueid[is.na(clin$tissueid)] <- ""
-  clin$treatmentid[is.na(clin$treatmentid)] <- ""
-  
-  # add 
-  expr_bool = TRUE
-  snv_bool = FALSE
-  cna_bool = FALSE
-  snv_bool = FALSE
-  study = "Ravi"
-  case = case
-  clin = clin
-  expr = expr
+
+  case = read_delim("files/cased_sequenced.csv", delim = ";", escape_double = FALSE, trim_ws = TRUE)
+  clin = read.csv("files/CLIN.csv",row.names = 1,check.names = FALSE)
+  expr = read.csv("files/EXPR.csv",row.names = 1, check.names = FALSE)
   
   if( expr_bool ){
     
@@ -218,9 +216,6 @@ Create_SummarizedExperiments = function( study , expr_bool , snv_bool , cna_bool
       snv_bool=snv_bool 
     ) 
     
-    #add 
-    
-    se_list[["expr"]] <- S1
   }
   
   return(se_list)

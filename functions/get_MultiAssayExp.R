@@ -2,45 +2,68 @@ library(Biobase)
 library(SummarizedExperiment)
 library(MultiAssayExperiment)
 library(stringr)
+#add
+library(readr)
 
-source_location <- "https://raw.githubusercontent.com/BHKLAB-Pachyderm/ICB_Common/main"
-# source_location <- "~/Documents/GitHub/Pachyderm/PredictIO_ICB/ICB_Common"
 
-get_MultiAssayExp <- function(study, input_dir, expr_with_counts_isoforms=FALSE){ 
+get_MultiAssayExp <- function(study, expr_with_counts_isoforms=FALSE){ 
 
-  #add
+  
   library(readr)
-  DATASET_LOAD_INFO <- read_csv("data/DATASET_LOAD_INFO.csv")
-  
-  new_row <- data.frame(
-    study = "Ravi", 
-    expr_bool = TRUE, 
-    snv_bool = FALSE,  
-    cna_bool = FALSE, 
-    cin_bool = FALSE, 
-    coverage = NA, 
-    indel_bool = FALSE, 
-    mutsig_bool = FALSE, 
-    WES.comment = NA,
-    stringsAsFactors = FALSE
-  )
+  path <- "https://raw.githubusercontent.com/BHKLAB-DataProcessing/ICB_Common/main/data/DATASET_LOAD_INFO.csv"
+  DATASET_LOAD_INFO <- read_delim("files/cased_sequenced.csv", delim = ";", escape_double = FALSE, trim_ws = TRUE)
   
   
-  DATASET_LOAD_INFO <- rbind(DATASET_LOAD_INFO, new_row)
-  data <- data[data$study == study, ]
+  # Create a new row for Ravi 
+  #new_row <- data.frame(
+  #  study = "Ravi", 
+  #  expr_bool = TRUE, 
+  #  snv_bool = FALSE,  
+  #  cna_bool = FALSE, 
+  #  cin_bool = FALSE, 
+  # coverage = NA, 
+  #  indel_bool = FALSE, 
+  #  mutsig_bool = FALSE, 
+  # WES.comment = NA,
+  # stringsAsFactors = FALSE)
+  
+  #for Ravi we have :
+  study = "Ravi" 
+
+  
+  #add input_diras alist 
+  input_dir2 = list()
+  input_dir2[["CLIN"]] <- read.csv("files/CLIN.csv",row.names = 1)
+  input_dir2[["EXPR"]] <- read.csv("files/EXPR.csv",row.names = 1)
+  input_dir2[["case"]] <- read_delim("files/cased_sequenced.csv", delim = ";", escape_double = FALSE, trim_ws = TRUE)
   
   
+  #se_list <- Create_SummarizedExperiments( 
+    #input_dir= input_dir2,
+    #study= data$study, 
+    #expr_bool= data$expr_bool, 
+    #snv_bool= data$snv_bool, 
+    #cna_bool= data$cna_bool, 
+    #cin_bool= data$cin_bool, 
+    #coverage= data$coverage, 
+    #indel_bool= data$indel_bool,
+    #expr_with_counts_isoforms=expr_with_counts_isoforms
+  #)
   
-  se_list <- Create_SummarizedExperiments( 
-    input_dir=input_dir,
-    study= data$study, 
-    expr_bool= data$expr_bool, 
-    snv_bool= data$snv_bool, 
-    cna_bool= data$cna_bool, 
-    cin_bool= data$cin_bool, 
-    coverage= data$coverage, 
-    indel_bool= data$indel_bool,
-    expr_with_counts_isoforms=expr_with_counts_isoforms
+  
+  #add
+  se_list <- list()
+  
+  se_list[["expr"]] <- Create_EXP_SummarizedExperiment(
+    study=Ravi , 
+    case=case, 
+    clin=clin, 
+    expr=expr, 
+    feat_snv=FALSE , 
+    feat_cna=FALSE, 
+    feat_cin=FALSE, 
+    cna_bool=FALSE , 
+    snv_bool=FALSE 
   )
   
   
@@ -78,21 +101,13 @@ get_MultiAssayExp <- function(study, input_dir, expr_with_counts_isoforms=FALSE)
   dim(coldata)
   
   #add
-  ICB_Ravi <- MultiAssayExperiment(experiments=se_list, colData=coldata)
+  #ICB_Ravi <- MultiAssayExperiment(experiments=se_list, colData=coldata)
 
   # Save the multiassay_result object as an RDS file
-  saveRDS(ICB_Ravi, file = "C:/Users/sogol/OneDrive/Documents/BHK lab/Ravi_version2/data/ICB_Ravii.rds")
+  #saveRDS(ICB_Ravi, file = "C:/Users/sogol/OneDrive/Documents/BHK lab/Ravi_version2/data/ICB_Ravii.rds")
 
-  e <- assays(ICB_Ravi)[["expr"]]
-  c <- data.frame(colData(ICB_Ravi))
-  a <- data.frame(rowData(ICB_Ravi@ExperimentList$expr)) # 2794 protein-coding genes???? 
   
-  dim(e)
-  dim(c)
-  dim(a)
-  View(a)
-  protein_coding_gene <- a[a$gene_type == "protein_coding",]
-  dim(protein_coding_gene)
-  
+
   return(MultiAssayExperiment(experiments=se_list, colData=coldata))
 }
+

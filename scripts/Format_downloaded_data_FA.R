@@ -43,6 +43,9 @@ clin_merge_data <- merge(clin_data1, clin_data2, by = "Harmonized_SU2C_Participa
 colnames(clin_merge_data)[colnames(clin_merge_data) == "Harmonized_SU2C_Participant_ID_v2"] <- "patient"
 
 
+#replace - with _ in clin$patient
+clin$patient <- str_replace_all(clin$patient, '-', '_') 
+
 # Save merged clinical data
 # write.table(clin_merge_data, file=file.path(work_dir, 'CLIN.txt'), quote=FALSE , sep="\t" , col.names=TRUE , row.names=FALSE)
 
@@ -65,6 +68,7 @@ expr <- data.frame(read.gct(gct_file_path))
 new_colnames <- gsub("\\.", "-", colnames(expr))
 new_colnames <- gsub("-T1$|-T2$", "", new_colnames)
 colnames(expr) <- new_colnames
+
 
 # Check for any duplicate column names after renaming
 duplicate_colnames <- colnames(expr)[duplicated(colnames(expr))]

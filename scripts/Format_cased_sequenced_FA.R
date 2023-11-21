@@ -32,11 +32,7 @@ case$expr <- as.numeric(as.character(case$expr))
 #expr <- read.csv(file.path(input_dir, "EXPR.txt.gz"), stringsAsFactors=FALSE , sep="\t" )
 
 path_2 <- "~/BHK lab/Ravi_Testing/files/EXPR.txt.gz"
-expr <- read.csv(path_2, stringsAsFactors=FALSE , sep="\t" )
-
-
-# 1. Replace periods with hyphens
-colnames(expr) <- gsub("\\.", "-", colnames(expr))
+expr <- read.csv(path_2, stringsAsFactors=FALSE , sep="\t",check.names = FALSE )
 
 
 # Check for any duplicate column names after renaming
