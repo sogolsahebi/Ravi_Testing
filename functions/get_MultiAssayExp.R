@@ -29,13 +29,6 @@ get_MultiAssayExp <- function(study, expr_with_counts_isoforms=FALSE){
   
   #for Ravi we have :
   study = "Ravi" 
-
-  
-  #add input_diras alist 
-  input_dir2 = list()
-  input_dir2[["CLIN"]] <- read.csv("files/CLIN.csv",row.names = 1)
-  input_dir2[["EXPR"]] <- read.csv("files/EXPR.csv",row.names = 1)
-  input_dir2[["case"]] <- read_delim("files/cased_sequenced.csv", delim = ";", escape_double = FALSE, trim_ws = TRUE)
   
   
   #se_list <- Create_SummarizedExperiments( 
