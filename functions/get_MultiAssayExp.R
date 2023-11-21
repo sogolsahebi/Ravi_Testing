@@ -8,10 +8,9 @@ library(readr)
 
 get_MultiAssayExp <- function(study, expr_with_counts_isoforms=FALSE){ 
 
-  
-  library(readr)
-  path <- "https://raw.githubusercontent.com/BHKLAB-DataProcessing/ICB_Common/main/data/DATASET_LOAD_INFO.csv"
-  DATASET_LOAD_INFO <- read_delim("files/cased_sequenced.csv", delim = ";", escape_double = FALSE, trim_ws = TRUE)
+
+  #path <- "https://raw.githubusercontent.com/BHKLAB-DataProcessing/ICB_Common/main/data/DATASET_LOAD_INFO.csv"
+  #DATASET_LOAD_INFO <- read_delim(path, delim = ";", escape_double = FALSE, trim_ws = TRUE)
   
   
   # Create a new row for Ravi 
