@@ -7,8 +7,8 @@ library(readr)
 
 
 get_MultiAssayExp <- function(study, expr_with_counts_isoforms=FALSE){ 
-
-
+  
+  
   #path <- "https://raw.githubusercontent.com/BHKLAB-DataProcessing/ICB_Common/main/data/DATASET_LOAD_INFO.csv"
   #DATASET_LOAD_INFO <-read_delim("data/DATASET_LOAD_INFO (2).csv", delim = ";", escape_double = FALSE, trim_ws = TRUE)
   
@@ -30,19 +30,8 @@ get_MultiAssayExp <- function(study, expr_with_counts_isoforms=FALSE){
   
   #for Ravi we have :
   study = "Ravi" 
-  
-  
-  #se_list <- Create_SummarizedExperiments( 
-    #input_dir= input_dir2,
-    #study= data$study, 
-    #expr_bool= data$expr_bool, 
-    #snv_bool= data$snv_bool, 
-    #cna_bool= data$cna_bool, 
-    #cin_bool= data$cin_bool, 
-    #coverage= data$coverage, 
-    #indel_bool= data$indel_bool,
-    #expr_with_counts_isoforms=expr_with_counts_isoforms
-  #)
+  expr_bool = TRUE
+
   
   
   #add
@@ -57,7 +46,7 @@ get_MultiAssayExp <- function(study, expr_with_counts_isoforms=FALSE){
     feat_cna=FALSE, 
     feat_cin=FALSE, 
     cna_bool=FALSE , 
-    snv_bool=FALSE 
+    snv_bool=FALSE,
   )
   
   
@@ -73,8 +62,8 @@ get_MultiAssayExp <- function(study, expr_with_counts_isoforms=FALSE){
   allcols <- lapply(cols, function(col){
     return(rownames(col))
   })
-
-
+  
+  
   allcols <- unique(unlist(allcols))
   #length(allcols) 152
   
@@ -96,12 +85,12 @@ get_MultiAssayExp <- function(study, expr_with_counts_isoforms=FALSE){
   
   #add
   #ICB_Ravi <- MultiAssayExperiment(experiments=se_list, colData=coldata)
-
+  
   # Save the multiassay_result object as an RDS file
   #saveRDS(ICB_Ravi, file = "C:/Users/sogol/OneDrive/Documents/BHK lab/Ravi_version2/data/ICB_Ravii.rds")
-
   
-
+  
+  
   return(MultiAssayExperiment(experiments=se_list, colData=coldata))
 }
 
