@@ -8,6 +8,7 @@
 # Load necessary libraries
 library(readxl)
 library(CePa)
+library(stringr)
 
 
 # Setup working directory from command line arguments
@@ -44,7 +45,7 @@ colnames(clin_merge_data)[colnames(clin_merge_data) == "Harmonized_SU2C_Particip
 
 
 #replace - with _ in clin$patient
-clin$patient <- str_replace_all(clin$patient, '-', '_') 
+clin_merge_data$patient <- str_replace_all(clin_merge_data$patient, '-', '_') 
 
 # Save merged clinical data
 # write.table(clin_merge_data, file=file.path(work_dir, 'CLIN.txt'), quote=FALSE , sep="\t" , col.names=TRUE , row.names=FALSE)
