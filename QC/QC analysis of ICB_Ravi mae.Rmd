@@ -3,9 +3,7 @@ title: "QC Analysis of ICB_Ravi mae"
 author: "Nasim Bondar Sahebi"
 date: "2023-11-07"
 output:
-  pdf_document: default
   html_document: default
-  word_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -17,7 +15,6 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 
 ```{r libraries}
 
-# Load libraries
 library(ggplot2)
 library(dplyr)
 library(MultiAssayExperiment) 
@@ -39,10 +36,10 @@ library(readr)
   - **Study Reference**: [PubMed ID 37024582](https://pubmed.ncbi.nlm.nih.gov/37024582/)
   - **Patient Count (RNA)**: 152
   - **Treatment Details**:
-  - **PD-1/PD-L1**: 130 patients
-  - **IO+chemo**: 2 patients
-  - **IO+combo**: 16 patients
-  - **Not Available (NA)**: 4 patients
+    **PD-1/PD-L1**: 130 patients
+    **IO+chemo**: 2 patients
+    **IO+combo**: 16 patients
+    **Not Available (NA)**: 4 patients
 
 
 Load multiassay .rds file, extract clinical, expression data, and annotations; prepare gene expression data for analysis.
@@ -63,7 +60,7 @@ expr <- assays(mae)[["expr"]]
 annot <- data.frame(rowData(mae@ExperimentList$expr))
 
 # Display first few rows of the dataset
-head(expr)
+expr[1:10,1:6]
 ```
 
 # Principal Component Analysis (PCA)
@@ -71,7 +68,7 @@ head(expr)
 ## Objective
 Perform PCA on gene expression data to assess variation across different research centers. 
 
-## Data Preparation
+### Data Preparation
 
 Following the methodologies outlined in the "RNA-seq differential expression analysis" section of the referenced paper, the following steps were taken to prepare our gene expression data for Principal Component Analysis (PCA):
 
@@ -102,7 +99,7 @@ expr <- expr[genes_above_threshold >= threshold_samples, ]
 expr_m <- t(expr)
 ```
 
-## Perform PCA
+### Perform PCA
 
 ```{r perform-pca}
 # Calculate PCA 
@@ -116,9 +113,9 @@ print(var_res)
 
 ```
 
-# Clinical Data Processing
+### Clinical Data Processing
 
-## Subseting clinical data
+- Subseting clinical data
 
 ```{r load-clinical-data}
 # Subsetting 'clin' data frame to include only 'patientid' and 'Institution' columns
@@ -128,7 +125,7 @@ clin_subsetresponse <-clin[, c("patientid", "response")]
 
 ```
 
-## Merge PCA and Clinical Data 
+### Merge PCA and Clinical Data 
 
 ```{r merge-data}
 # Merge PCA results with clinical data
@@ -145,11 +142,11 @@ pcx_merge <- pcx_merge[,-1] # institution column is added
 
 # Visualization
 
-## Bar Plot
+### Bar Plot
 
 - Create a bar plot to visualize variance by each principal component.
 
-The bar plot displays PC1 as the longest, explaining the most variance, while subsequent bars (PC2, PC3, etc.) become progressively shorter, indicating diminishing variance. It serves as a visual representation of the commonly used scree plot in PCA for selecting optimal principal components.
+The bar plot displays PC1 as the longest, explaining the most variance, while subsequent bars (PC2, PC3, etc.) become progressively shorter, indicating diminishing variance. 
 
 
 ```{r scree-plot}
@@ -158,7 +155,7 @@ The bar plot displays PC1 as the longest, explaining the most variance, while su
 barplot(var_res, main="Bar Plot", xlab="Principal Component", ylab="Percentage of Variance ", col="skyblue")
 ```
 
-## PCA Results Plot
+### 1. PCA Results Plot
 
 
 PCA on gene expression data, shows that the 'Institution' factor has no significant effect on gene expression data sampling.
@@ -178,8 +175,9 @@ ggplot(pcx_merge, aes(PC1, PC2, color = Institution)) +
 
 ```
 
-#2.Limma approach and Volcano plot 
+#### 2.Limma approach  
 
+-Used to find the differentially expressed genes between responders and non-responders
 
 ```{r diff expression, include=TRUE, result = TRUE}
 
@@ -202,23 +200,16 @@ fit <- lmFit(filtered_expression, design)
 # Perform eBayes analysis
 fit <- eBayes(fit)
 
-# The 'topTable' function displays the top portion of the results
-topTable(fit)
-
 # To display the results in a table format, you can use 'datatable'
 datatable(topTable(fit))
 
-
-#Top table only shows the top portion of the results
-topTable(fit)
-datatable(topTable(fit))
-
-
 ```
 
-Preparing Data for volcano Plot 
+### 3. Volcano plot Prepration.
 
-Convert fit to Data frame and add column gene_name symbol
+-Preparing Data for volcano Plot 
+
+-Convert fit to Data frame and add column gene_name symbol
 
 ```{r prepare volcano, include=TRUE, result = TRUE}
 
@@ -240,11 +231,10 @@ merge_result <- merge(volcano_data, subset_annot, by= "gene_id")
 # Display the merged result in a table format
 datatable(merge_result)
 
+
 ```
 
-Volcano Plot1. 
-
-plot Volacnot plot based on P value 
+#### Volcano Plot based on P value 
 
 ```{r volcan plot, include=TRUE, result = TRUE}
 
@@ -255,9 +245,7 @@ EnhancedVolcano(merge_result,
 
 ```
 
-Volcano Plot2. 
-
-plot Volacnot plot based on "FDR"
+#### Volcano Plot based on FDR.
 
 ```{r volcanplot2, include=TRUE, result = TRUE}
 
@@ -269,12 +257,10 @@ EnhancedVolcano(merge_result,
     y = 'adj.P.Val')
 
 ```
-#Figure 1 of paper
 
-- Figure 1(a):Clinical characteristics in SU2C-MARK cohort.
-- Figure 1(b):BOR by PDL1 TPS category.
+### 4. Figure 1(a) of paper
 
-First 1.(a)_RNA cohort in different institutions.
+- First 1.(a)_RNA cohort in different institutions.
 
 ```{r piechart , include=TRUE, result = TRUE}
 
@@ -303,8 +289,10 @@ print(pie_chart)
 
 ```
 
+### 5. Figure 1(b) of paper
 
-Figure 1(b):BOR/recist by PDL1 TPS category.
+
+.Figure 1(b):BOR/recist by PDL1 TPS category.
 
 
 ```{r bar plot, include=TRUE, result = TRUE}
