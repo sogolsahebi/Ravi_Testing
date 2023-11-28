@@ -36,10 +36,10 @@ library(readr)
   - **Study Reference**: [PubMed ID 37024582](https://pubmed.ncbi.nlm.nih.gov/37024582/)
   - **Patient Count (RNA)**: 152
   - **Treatment Details**:
-    **PD-1/PD-L1**: 130 patients
-    **IO+chemo**: 2 patients
-    **IO+combo**: 16 patients
-    **Not Available (NA)**: 4 patients
+  - **PD-1/PD-L1**: 130 patients
+  - **IO+chemo**: 2 patients
+  - **IO+combo**: 16 patients
+  - **Not Available (NA)**: 4 patients
 
 
 Load multiassay .rds file, extract clinical, expression data, and annotations; prepare gene expression data for analysis.
@@ -177,7 +177,7 @@ ggplot(pcx_merge, aes(PC1, PC2, color = Institution)) +
 
 #### 2.Limma approach  
 
--Used to find the differentially expressed genes between responders and non-responders
+- Used to find the differentially expressed genes between responders and non-responders
 
 ```{r diff expression, include=TRUE, result = TRUE}
 
@@ -207,9 +207,9 @@ datatable(topTable(fit))
 
 ### 3. Volcano plot Prepration.
 
--Preparing Data for volcano Plot 
+- Preparing Data for volcano Plot 
 
--Convert fit to Data frame and add column gene_name symbol
+- Convert fit to Data frame and add column gene_name symbol
 
 ```{r prepare volcano, include=TRUE, result = TRUE}
 
@@ -292,7 +292,7 @@ print(pie_chart)
 ### 5. Figure 1(b) of paper
 
 
-.Figure 1(b):BOR/recist by PDL1 TPS category.
+Figure 1(b):BOR/recist by PDL1 TPS category.
 
 
 ```{r bar plot, include=TRUE, result = TRUE}
