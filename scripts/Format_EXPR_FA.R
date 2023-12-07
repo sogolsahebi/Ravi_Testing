@@ -8,6 +8,10 @@ library(data.table)
 #args <- commandArgs(trailingOnly = TRUE)
 #input_dir <- args[1]
 #output_dir <- args[2]
+#annot_dir <- args[3]
+
+#Data loading annottaion 
+#load(file.path(annot_dir, 'Gencode.v19.annotation.RData')
 
 # Data Reading
 # Define the path to open EXPR.txt.gz file.
@@ -23,7 +27,7 @@ colnames(expr) <- gsub("\\.", "-", colnames(expr))
 
 # Data Filtering
 # Define the path for the 'cased_sequenced.csv' file
-#case = read.csv( file.path(output_dir, "cased_sequenced.csv") , sep=";" )
+#case = read.csv( file.path(input_dir, "cased_sequenced.csv") , sep=";" )
 
 
 file_path <- "~/BHK lab/Ravi_Testing/files/cased_sequenced.csv"
