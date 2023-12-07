@@ -8,10 +8,6 @@ library(data.table)
 #args <- commandArgs(trailingOnly = TRUE)
 #input_dir <- args[1]
 #output_dir <- args[2]
-#annot_dir <- args[3]
-
-#Data loading annottaion 
-#load(file.path(annot_dir, 'Gencode.v19.annotation.RData')
 
 # Data Reading
 # Define the path to open EXPR.txt.gz file.
@@ -34,10 +30,8 @@ file_path <- "~/BHK lab/Ravi_Testing/files/cased_sequenced.csv"
 # Read the 'case' dataset
 case <- read.csv(file_path, sep = ";")
 
-
 # Filter the 'expr' dataset to include only patients with expr value of 1 in the 'case' dataset
 expr <- expr[ , case[case$expr %in% 1,]$patient]
-
 
 # Check the range of data values
 range(expr)
