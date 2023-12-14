@@ -31,9 +31,11 @@ get_MultiAssayExp <- function(study, expr_with_counts_isoforms=FALSE){
   #for Ravi we have :
   study = "Ravi" 
   expr_bool = TRUE
+  case = read_delim("files/cased_sequenced.csv", delim = ";", escape_double = FALSE, trim_ws = TRUE)
+  clin = read.csv("files/CLIN.csv",row.names = 1,check.names = FALSE)
+  expr = read.csv("files/EXPR.csv",row.names = 1, check.names = FALSE)
 
-  
-  
+
   #add
   se_list <- list()
   
@@ -87,8 +89,7 @@ get_MultiAssayExp <- function(study, expr_with_counts_isoforms=FALSE){
   #ICB_Ravi <- MultiAssayExperiment(experiments=se_list, colData=coldata)
   
   # Save the multiassay_result object as an RDS file
-  #saveRDS(ICB_Ravi, file = "C:/Users/sogol/OneDrive/Documents/BHK lab/Ravi_version2/data/ICB_Ravii.rds")
-  
+  #saveRDS(ICB_Ravi, file = "C:/Users/sogol/OneDrive/Documents/BHK lab/Ravi_Testing/data/ICB_Ravi.rds")
   
   
   return(MultiAssayExperiment(experiments=se_list, colData=coldata))
