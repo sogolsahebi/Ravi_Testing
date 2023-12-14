@@ -19,7 +19,7 @@ colnames(expr)
 
 # Data Filtering
 # Define the path for the 'cased_sequenced.csv' file
-#case = read.csv( file.path(output_dir, "cased_sequenced.csv") , sep=";" )
+#case = read.csv( file.path(input_dir, "cased_sequenced.csv") , sep=";" )
 
 file_path <- "~/BHK lab/Ravi_Testing/files/cased_sequenced.csv"
 # Read the 'case' dataset
