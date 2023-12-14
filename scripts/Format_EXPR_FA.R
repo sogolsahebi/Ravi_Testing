@@ -1,5 +1,5 @@
 # RNA-seq Data Processing.
-# File: Format_EXPR.R
+# File: Format_EXPR.R.
 
 #Read libararies.
 library(data.table)
@@ -15,7 +15,7 @@ library(data.table)
 #expr <- read.csv(file.path(input_dir, "EXPR.txt.gz"), stringsAsFactors=FALSE , sep="\t" )
 path <- "~/BHK lab/Ravi_Testing/files/EXPR.txt.gz"
 expr <- read.csv(path, stringsAsFactors = FALSE, sep = "\t", check.names = FALSE)
-colnames(expr) 
+colnames(expr)
 
 # Data Filtering
 # Define the path for the 'cased_sequenced.csv' file
