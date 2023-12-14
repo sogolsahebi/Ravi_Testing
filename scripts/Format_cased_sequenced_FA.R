@@ -8,10 +8,9 @@
 
 # Load the clinical merged data from the specified file path.
 #clin <- read.table(file.path(work_dir, 'CLIN.txt'), sep="\t", header=TRUE)
-
 path <- "~/BHK lab/Ravi_Testing/files/CLIN.txt"
 clin <- read.table(path, sep="\t", header=TRUE)
-
+dim(clin)
 
 # Extract unique patients and sort them.
 patient <- sort(unique(clin$patient))
@@ -26,25 +25,17 @@ case$snv <- as.numeric(as.character(case$snv))
 case$cna <- as.numeric(as.character(case$cna))
 case$expr <- as.numeric(as.character(case$expr))
 
-
 # Load the RNA data
 # Read the RNA-Seq data from the gct file.
 #expr <- read.csv(file.path(input_dir, "EXPR.txt.gz"), stringsAsFactors=FALSE , sep="\t" )
-
 path_2 <- "~/BHK lab/Ravi_Testing/files/EXPR.txt.gz"
 expr <- read.csv(path_2, stringsAsFactors=FALSE , sep="\t",check.names = FALSE )
-
-
-# Check for any duplicate column names after renaming
-duplicate_colnames <- colnames(expr)[duplicated(colnames(expr))]
-print(duplicate_colnames)  # Should ideally print nothing if there are no duplicates
 
 # Sort the row names of 'expr'
 expr <- expr[sort(rownames(expr)),]
 
 # Check the overlap of patient IDs between the 'expr' and 'clin' data
-print(sum(colnames(expr) %in% clin$patient))
-
+sum(colnames(expr) %in% clin$patient)
 
 # Check the overlap of patient IDs between the 'case' and 'expr' data
 sum(rownames(case) %in% colnames(expr))
@@ -58,6 +49,5 @@ for(i in 1:nrow(case)) {
 
 # Save the updated 'case' data frame to a CSV file.
 #write.table( case , file=file.path(output_dir, "cased_sequenced.csv") , quote=FALSE , sep=";" , col.names=TRUE , row.names=FALSE )
-
 path_3 <- "~/BHK lab/Ravi_Testing/files/cased_sequenced.csv"
 write.table( case , path_3 , quote=FALSE , sep=";" , col.names=TRUE , row.names=FALSE )
