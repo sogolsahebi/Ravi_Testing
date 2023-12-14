@@ -34,13 +34,11 @@ library(readr)
 #### Data Overview
 
   - **Study Reference**: [PubMed ID 37024582](https://pubmed.ncbi.nlm.nih.gov/37024582/)
-  - **Patient Count (RNA)**: 152
+  - **Patient Count (RNA)**: 148
   - **Treatment Details**:
   - **PD-1/PD-L1**: 130 patients
   - **IO+chemo**: 2 patients
   - **IO+combo**: 16 patients
-  - **Not Available (NA)**: 4 patients
-
 
 Load multiassay .rds file, extract clinical, expression data, and annotations; prepare gene expression data for analysis.
 
@@ -48,7 +46,7 @@ Load multiassay .rds file, extract clinical, expression data, and annotations; p
 # Load your multiassay result and extract clinical data , expression data and annotation
 
 #load mae obj
-mae <- readRDS("~/BHK lab/Ravi_version2/data/ICB_Ravii.rds")
+mae <- readRDS("~/BHK lab/Ravi_Testing/data/ICB_Ravi.rds")
 
 #extract Clinical data 
 clin <- data.frame(colData(mae))
