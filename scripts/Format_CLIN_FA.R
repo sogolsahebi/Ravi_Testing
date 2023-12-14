@@ -59,6 +59,8 @@ clin$dna <- NA
 clin$dna_info <- NA
 clin$rna <- ifelse(clin_merged$RNA_All == 1, "rnaseq", NA)
 clin$rna_info <- ifelse(clin_merged$RNA_All == 1, "tpm", NA)
+clin_merged$RNA_All <- NULL
+clin_merged$WES_ALL <- NULL
 
 # Calculate the response using Get_Response function.
 clin$response = Get_Response(data = clin)
@@ -106,3 +108,4 @@ clin[clin == ""] <- NA
 
 file <- "~/BHK lab/Ravi_Testing/files/CLIN.csv"
 write.csv(clin, file, row.names = TRUE)
+
