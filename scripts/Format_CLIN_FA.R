@@ -60,7 +60,7 @@ clin$dna_info <- NA
 clin$rna <- ifelse(clin_merged$RNA_All == 1, "rnaseq", NA)
 clin$rna_info <- ifelse(clin_merged$RNA_All == 1, "tpm", NA)
 clin_merged$RNA_All <- NULL
-clin_merged$WES_ALL <- NULL
+clin_merged$WES_All<- NULL
 
 # Calculate the response using Get_Response function.
 clin$response = Get_Response(data = clin)
