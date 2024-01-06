@@ -2,75 +2,61 @@ library(Biobase)
 library(SummarizedExperiment)
 library(MultiAssayExperiment)
 library(stringr)
-#add
-library(readr)
 
+# add
+library(dplyr)
+#source_location <- "https://raw.githubusercontent.com/BHKLAB-Pachyderm/ICB_Common/main"
+# source_location <- "~/Documents/GitHub/Pachyderm/PredictIO_ICB/ICB_Common"
 
-get_MultiAssayExp <- function(study, expr_with_counts_isoforms=FALSE){ 
+get_MultiAssayExp <- function(study, input_dir, expr_with_counts_isoforms=FALSE){ 
   
+  # add
+  # source(paste(source_location, "code", "CNA_Functions.R", sep = "/"))
+  # source(paste(source_location, "code", "SNV_Functions.R", sep = "/"))
+  # source(paste(source_location, "code", "Create_SummarizedExp.R", sep = "/"))
+  # data = read.csv( paste(source_location, "data", "DATASET_LOAD_INFO.csv", sep="/") , sep=";" , stringsAsFactors=FALSE )
+  # data <- data[data$study == study, ]
   
-  #path <- "https://raw.githubusercontent.com/BHKLAB-DataProcessing/ICB_Common/main/data/DATASET_LOAD_INFO.csv"
-  #DATASET_LOAD_INFO <-read_delim("data/DATASET_LOAD_INFO (2).csv", delim = ";", escape_double = FALSE, trim_ws = TRUE)
+  # add
+  #add(TODO)
+  library(readr)
+  # study = "Ravi"
+  # input_dir = "~/BHK lab/Ravi_Testing/files/"
   
-  # Create a new row for Ravi 
-  #new_row <- data.frame(
-  #  study = "Ravi", 
-  #  expr_bool = TRUE, 
-  #  snv_bool = FALSE,  
-  #  cna_bool = FALSE, 
-  #  cin_bool = FALSE, 
-  # coverage = NA, 
-  #  indel_bool = FALSE, 
-  #  mutsig_bool = FALSE, 
-  # WES.comment = NA,
-  # stringsAsFactors = FALSE)
-  
-  #adding to DATASET_LOAD_INFO 
-  #DATASET_LOAD_INFO <- rbind(DATASET_LOAD_INFO, new_row)
-  
-  #for Ravi we have :
-  study = "Ravi" 
-  expr_bool = TRUE
-  case = read_delim("files/cased_sequenced.csv", delim = ";", escape_double = FALSE, trim_ws = TRUE)
-  clin = read.csv("files/CLIN.csv",row.names = 1,check.names = FALSE)
-  expr = read.csv("files/EXPR.csv",row.names = 1, check.names = FALSE)
-
-
   #add
-  se_list <- list()
+  data<- read_delim(paste0(input_dir, "DATASET_LOAD_INFO.csv"), delim = ";", quote = ";", trim_ws = TRUE)
+  data <- read_delim("data/DATASET_LOAD_INFO.csv", delim = ";",quote = ";", escape_double = FALSE, trim_ws = TRUE)
+  colnames(data) <- gsub("\"", "", names(data))
+  data <- data %>% mutate(across(everything(), ~str_replace_all(.x, "\"", "")))
+  data <- data[data$study == study, ]
   
-  se_list[["expr"]] <- Create_EXP_SummarizedExperiment(
-    study=Ravi , 
-    case=case, 
-    clin=clin, 
-    expr=expr, 
-    feat_snv=FALSE , 
-    feat_cna=FALSE, 
-    feat_cin=FALSE, 
-    cna_bool=FALSE , 
-    snv_bool=FALSE,
+  se_list <- Create_SummarizedExperiments( 
+    input_dir=input_dir,
+    study= data$study, 
+    expr_bool= data$expr_bool, 
+    snv_bool= data$snv_bool, 
+    cna_bool= data$cna_bool, 
+    cin_bool= data$cin_bool, 
+    coverage= data$coverage, 
+    indel_bool= data$indel_bool,
+    expr_with_counts_isoforms=expr_with_counts_isoforms
   )
   
+  # add
+  #se_list[["expr"]] <- S1
   
   cols <-list()
   for(assay_name in names(se_list)){
     cols[[assay_name]]<- data.frame(colData(se_list[[assay_name]]))
   }
   
-  #cols[["expr"]] <- coldata #152 
-  
-  
   # Format and merge coldata
   allcols <- lapply(cols, function(col){
     return(rownames(col))
   })
-  
-  
   allcols <- unique(unlist(allcols))
-  #length(allcols) 152
   
   coldata <- NA
-  
   for(col in cols){
     if(!is.data.frame(coldata)){
       coldata <- col
@@ -81,17 +67,12 @@ get_MultiAssayExp <- function(study, expr_with_counts_isoforms=FALSE){
       coldata <- rbind(coldata, filtered)
     }
   }
-  
   coldata <- coldata[order(rownames(coldata)), ]
-  dim(coldata)
   
   #add
-  #ICB_Ravi <- MultiAssayExperiment(experiments=se_list, colData=coldata)
-  
-  # Save the multiassay_result object as an RDS file
-  #saveRDS(ICB_Ravi, file = "C:/Users/sogol/OneDrive/Documents/BHK lab/Ravi_Testing/data/ICB_Ravi.rds")
-  
-  
+  #result <- MultiAssayExperiment(experiments=se_list, colData=coldata)
+  #saveRDS(result, file = "C:/Users/sogol/OneDrive/Documents/BHK lab/Ravi_Testing/data/ICB_Raviii.rds")
+
   return(MultiAssayExperiment(experiments=se_list, colData=coldata))
 }
 

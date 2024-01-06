@@ -11,10 +11,9 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 ```
 
 
-# Install and Load Libraries
+# Install and load libraries.
 
 ```{r libraries}
-
 library(ggplot2)
 library(dplyr)
 library(MultiAssayExperiment) 
@@ -29,9 +28,9 @@ library(readr)
 
 # Data Loading and Preparation
 
-## Load Gene Expression Data
+## Load Gene Expression Data, 
 
-#### Data Overview
+**Data Overview**:
 
   - **Study Reference**: [PubMed ID 37024582](https://pubmed.ncbi.nlm.nih.gov/37024582/)
   - **Patient Count (RNA)**: 148
@@ -58,7 +57,7 @@ expr <- assays(mae)[["expr"]]
 annot <- data.frame(rowData(mae@ExperimentList$expr))
 
 # Display first few rows of the dataset
-expr[1:10,1:6]
+DT::datatable(expr[1:8, 1:4])
 ```
 
 # Principal Component Analysis (PCA)
@@ -66,66 +65,68 @@ expr[1:10,1:6]
 ## Objective
 Perform PCA on gene expression data to assess variation across different research centers. 
 
-### Data Preparation
+## Data Preparation
 
-Following the methodologies outlined in the "RNA-seq differential expression analysis" section of the referenced paper, the following steps were taken to prepare our gene expression data for Principal Component Analysis (PCA):
+Following the 'RNA-seq differential expression analysis' section from the paper, steps for PCA-ready gene expression data include:
 
-1. **Restrict to protein-coding genes.**
+1. **Restrict expression data to protein-coding genes.**
 2. **Convert expression data**: Convert from `log2(TPM+0.001)` to `log2(TPM+1)` for consistency.
 3. **Remove low/zero expression genes**: Keep genes with expression at `log2TPM ≥ 0.5` across at least 30% of samples.
 
 
-```{r}
+```{r protein-coing genes}
 # Step 1: Restrict to Protein-Coding Genes
 # Filter out non-protein-coding transcripts for focused analysis
-annot_proteincoding <- annot[annot$gene_type == "protein_coding",] # 1586protein coding genes as mention in paper too!
+annot_proteincoding <- annot[annot$gene_type == "protein_coding",] # 19158 protein coding genes.
 expr <- expr[rownames(expr) %in% rownames(annot_proteincoding),]
 
 # Step 2: Normalize Expression Data
 # Convert from expr (log2(TPM + 0.001)) to standard log2(TPM + 1) format
-expr_original <- 2**expr - 0.001
-expr <- log2(expr_original + 1)
+expr <- log2((2**expr - 0.001) + 1)
 
 # Step 3: Filter Low/Zero Expression Genes
-# Retain genes expressed in at least 30% of the samples (as per study criteria)
-threshold_samples <- ceiling(ncol(expr) * 0.3)
-genes_above_threshold <- rowSums(expr >= 0.5)
-expr <- expr[genes_above_threshold >= threshold_samples, ]
+# Count samples with expr >= 0.5 per transcript
+count_over_0_5 <- as.numeric(apply(expr, 1, function(i) sum(i >= 0.5)))
 
-# Step 4: Transpose Data for PCA
-# Position samples as rows and genes as columns
-expr_m <- t(expr)
+# Identify transcripts with sufficient expression levels
+keep_transcripts <- which(count_over_0_5 >= dim(expr)[2] * 0.3)
+
+# Filter for transcripts meeting criteria
+expr <- expr[keep_transcripts, ]    # Dimensions: 15,857 x 148 - including 15k protein-coding genes.
+
+# Display
+DT::datatable(expr[1:8, 1:4])
+
 ```
 
-### Perform PCA
+### Perform PCA:
+
 
 ```{r perform-pca}
+
+# Transpose expr data for PCA , samples as rows and genes as columns.
+# Position samples as rows and genes as columns
+expr_t <- t(expr) #samples as rows and genes as columns
+
 # Calculate PCA 
-pc <- prcomp(expr_m, center = TRUE, scale. = TRUE)
+pc <- prcomp(expr_t, center = TRUE, scale. = TRUE)
 
 # Calculate and print the percentage of variance explained by each principal component
 var_res <- pc$sdev^2 / sum(pc$sdev^2) * 100
 var_res <- round(var_res, 2)  # Round to 2 decimal places
 
 print(var_res)
-
 ```
 
-### Clinical Data Processing
+Merge PCA and Clinical Data Subset
 
-- Subseting clinical data
+```{r merge-data}
 
-```{r load-clinical-data}
 # Subsetting 'clin' data frame to include only 'patientid' and 'Institution' columns
 
 clin_subset <- clin[, c("patientid", "Institution")]
 clin_subsetresponse <-clin[, c("patientid", "response")]
 
-```
-
-### Merge PCA and Clinical Data 
-
-```{r merge-data}
 # Merge PCA results with clinical data
 pcx <- data.frame(pc$x)
 pcx$patientid <- rownames(pcx)
@@ -138,11 +139,10 @@ pcx_merge <- pcx_merge[,-1] # institution column is added
 ```
 
 
-# Visualization
+## Visualization
 
-### Bar Plot
 
-- Create a bar plot to visualize variance by each principal component.
+- **Bar Plot** : To visualize variance by each principal component.
 
 The bar plot displays PC1 as the longest, explaining the most variance, while subsequent bars (PC2, PC3, etc.) become progressively shorter, indicating diminishing variance. 
 
@@ -155,6 +155,7 @@ barplot(var_res, main="Bar Plot", xlab="Principal Component", ylab="Percentage o
 
 ### 1. PCA Results Plot
 
+-  To visualize variance by each principal component.
 
 PCA on gene expression data, shows that the 'Institution' factor has no significant effect on gene expression data sampling.
 (no Batch effect has been detected)
@@ -203,7 +204,7 @@ datatable(topTable(fit))
 
 ```
 
-### 3. Volcano plot Prepration.
+### 3. Volcano plot Prepration
 
 - Preparing Data for volcano Plot 
 
@@ -232,29 +233,42 @@ datatable(merge_result)
 
 ```
 
-#### Volcano Plot based on P value 
+### Volcano Plot
 
 ```{r volcan plot, include=TRUE, result = TRUE}
 
+# Volcano Plot based on P value 
 EnhancedVolcano(merge_result,
     lab = merge_result$gene_name,
     x = 'logFC',
-    y = 'P.Value')
+    y = 'P.Value',  
+    pCutoff = 0.05,
+    FCcutoff = 1.5,
+    xlim = c(-5, 5),
+    ylim = c(0, -log10(10e-4)),
+    title= 'Volcano Plot based on P value'
+    )
 
-```
 
-#### Volcano Plot based on FDR.
-
-```{r volcanplot2, include=TRUE, result = TRUE}
-
+# Volcano Plot based on FDR 
 
 
 EnhancedVolcano(merge_result,
     lab = merge_result$gene_name,
     x = 'logFC',
-    y = 'adj.P.Val')
+    y = 'adj.P.Val',
+    pCutoff = 0.05,
+    FCcutoff = 1.5,
+    xlim = c(-5, 5),
+    ylim = c(0, -log10(10e-4)),
+    legendLabels=c('NS.','Log FC','adj p-value',
+      'adj p-value & Log FC'),
+    title= 'Volcano Plot based on FDR',)
+
 
 ```
+
+
 
 ### 4. Figure 1(a) of paper
 
