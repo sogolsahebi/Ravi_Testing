@@ -235,7 +235,7 @@ datatable(merge_result)
 
 ### Volcano Plot
 
-```{r volcan plot, include=TRUE, result = TRUE}
+```{r volcan plot, include=TRUE, result = TRUE. ,fig.width=10, fig.height= 7 }
 
 # Volcano Plot based on P value 
 EnhancedVolcano(merge_result,
