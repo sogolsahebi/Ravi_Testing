@@ -235,7 +235,7 @@ datatable(merge_result)
 
 ### Volcano Plot
 
-```{r volcan plot, include=TRUE, result = TRUE. ,fig.width=10, fig.height= 7 }
+```{r volcan plot, include=TRUE, result = TRUE ,fig.width=10, fig.height= 7 }
 
 # Volcano Plot based on P value 
 EnhancedVolcano(merge_result,
@@ -261,7 +261,7 @@ EnhancedVolcano(merge_result,
     FCcutoff = 1.5,
     xlim = c(-5, 5),
     ylim = c(0, -log10(10e-4)),
-    legendLabels=c('NS.','Log FC','adj p-value',
+    legendLabels=c('NS','Log FC','adj p-value',
       'adj p-value & Log FC'),
     title= 'Volcano Plot based on FDR',)
 
