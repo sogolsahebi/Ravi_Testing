@@ -117,7 +117,7 @@ format_se <- function(assay, coldata, assay_type, convert_gene_name=TRUE, check_
     }
     
     # add (TODO: For Ravi)
-    if (check_study){
+    else if (check_study){
     
       # Remove version numbers of row names of features_df 
       rownames(features_df) <- gsub("\\..*$", "", rownames(features_df))
