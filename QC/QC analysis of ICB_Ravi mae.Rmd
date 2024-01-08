@@ -45,7 +45,7 @@ Load multiassay .rds file, extract clinical, expression data, and annotations; p
 # Load your multiassay result and extract clinical data , expression data and annotation
 
 #load mae obj
-mae <- readRDS("~/BHK lab/Ravi_Testing/data/ICB_Ravi.rds")
+mae <- readRDS("~/BHK lab/Ravi_Testing/data/ICB_Raviii.rds")
 
 #extract Clinical data 
 clin <- data.frame(colData(mae))
@@ -130,7 +130,7 @@ clin_subsetresponse <-clin[, c("patientid", "response")]
 # Merge PCA results with clinical data
 pcx <- data.frame(pc$x)
 pcx$patientid <- rownames(pcx)
-pcx$patientid <- gsub("\\_", "-", pcx$patientid)
+
 
 pcx_merge <- merge(pcx, clin_subset, by="patientid")
 rownames(pcx_merge) <- pcx_merge[,1]
@@ -219,13 +219,13 @@ volcano_data <- topTable(fit, number=Inf)
 df <- as.data.frame(volcano_data)
 
 # Subset 'gene_id' and 'gene_name' from the gene data
-subset_annot <- annot_proteincoding[, c("gene_id", "gene_name")]
+subset_annot <- annot_proteincoding[, c("gene_id_no_ver", "gene_name")]
 
 # Add a 'gene_id' column to the volcano_data
 volcano_data$gene_id <- rownames(volcano_data)
 
 # Merge 'volcano_data' and 'annot_proteincoding' by 'gene_id'
-merge_result <- merge(volcano_data, subset_annot, by= "gene_id")
+merge_result <- merge(volcano_data, subset_annot, by.x= "gene_id", by.y = "gene_id_no_ver")
 
 # Display the merged result in a table format
 datatable(merge_result)
