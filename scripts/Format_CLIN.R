@@ -91,18 +91,12 @@ clin <- annotate_tissue(clin=clin, study='Ravi', annotation_tissue=annotation_ti
 annotation_drug <- read.csv("https://raw.githubusercontent.com/BHKLAB-DataProcessing/ICB_Common/main/data/curation_drug.csv")
 clin <- add_column(clin, treatmentid=annotate_drug('Ravi', clin$drug_type, annotation_drug), .after='tissueid')
 
-# Check unique values of treatmentid
-unique(clin$treatmentid)
-
 # Set drug_type based on treatmentid
 clin$drug_type[clin$treatmentid %in% c('Nivolumab', 'Pembrolizumab', 'Atezolizumab', 'Avelumab')] <- 'PD-1/PD-L1'
 clin$drug_type[clin$treatmentid %in% c('Nivolumab + LAG-3', 'Atezolizumab + Epacadostat', 'Nivolumab + Urelumab',
                                        'Nivolumab + Lirilumab', 'Durvalumab + Tremelimumab', 'Nivolumab + Ipilimumab')] <- 'IO+combo'
 
 clin$drug_type[clin$treatmentid %in% c('Pembrolizumab + Carboplatin + Pemetrexed', 'Nivolumab + Gemcitabine')] <- 'IO+chemo'
-
-# Check unique values of drugtype
-unique(clin$drug_type)
 
 # Replace empty string values with NA
 clin[clin == ""] <- NA

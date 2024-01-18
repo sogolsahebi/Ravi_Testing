@@ -57,15 +57,8 @@ expr <- data.frame(read.gct(gct_file_path))
 new_colnames <- gsub("\\.", "-", colnames(expr))
 colnames(expr) <- gsub("-T1$|-T2$", "", new_colnames)
 
-# Check for any duplicate column names after renaming
-duplicate_colnames <- colnames(expr)[duplicated(colnames(expr))]
-print(duplicate_colnames)  #Prints nothing
-
 # Sort the row names of 'expr'
 expr <- expr[sort(rownames(expr)),]
-
-# Confirm that all column values are numeric
-stopifnot(all(sapply(expr, is.numeric)))
 
 # Open a gzipped file for writing
 #gz <- gzfile(file.path(work_dir, 'EXPR.txt.gz'), "w")

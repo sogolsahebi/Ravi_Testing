@@ -11,7 +11,7 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 ```
 
 
-# Install and load libraries.
+# load libraries
 
 ```{r libraries}
 library(ggplot2)
@@ -22,13 +22,10 @@ library(EnhancedVolcano)
 library(DT)
 library(RColorBrewer)
 library(readr)
-
 ```
 
 
 # Data Loading and Preparation
-
-## Load Gene Expression Data, 
 
 **Data Overview**:
 
@@ -39,13 +36,13 @@ library(readr)
   - **IO+chemo**: 2 patients
   - **IO+combo**: 16 patients
 
-Load multiassay .rds file, extract clinical, expression data, and annotations; prepare gene expression data for analysis.
+Load multiassay .rds file, extract clinical, expression and annotations data; prepare gene expression data for analysis.
 
 ```{r load-expression-data}
 # Load your multiassay result and extract clinical data , expression data and annotation
 
 #load mae obj
-mae <- readRDS("~/BHK lab/Ravi_Testing/data/ICB_Raviii.rds")
+mae <- readRDS("~/BHK lab/Ravi_Testing/output/ICB_Raviii.rds")
 
 #extract Clinical data 
 clin <- data.frame(colData(mae))
@@ -62,16 +59,15 @@ DT::datatable(expr[1:8, 1:4])
 
 # Principal Component Analysis (PCA)
 
-## Objective
-Perform PCA on gene expression data to assess variation across different research centers. 
+**Objective**: Perform PCA on gene expression data to assess variation across different research centers. 
 
-## Data Preparation
+**Data Preparation**: Following the **RNA-seq differential expression**  analysis section from a paper, the analysis of differentially expressed genes involved filtering for protein-coding transcripts with a minimum expression of log2TPM ≥ 0.5 in at least 30% of samples. 
 
-Following the 'RNA-seq differential expression analysis' section from the paper, steps for PCA-ready gene expression data include:
+Therefore, steps for PCA-ready gene expression data include:
 
-1. **Restrict expression data to protein-coding genes.**
-2. **Convert expression data**: Convert from `log2(TPM+0.001)` to `log2(TPM+1)` for consistency.
-3. **Remove low/zero expression genes**: Keep genes with expression at `log2TPM ≥ 0.5` across at least 30% of samples.
+1. Restrict expression data to protein-coding genes.
+2. Convert expression data from `log2(TPM+0.001)` to `log2(TPM+1)` for consistency.
+3. Remove low/zero expression genes; Keep genes with expression at `log2TPM ≥ 0.5` across at least 30% of samples.
 
 
 ```{r protein-coing genes}
@@ -85,27 +81,29 @@ expr <- expr[rownames(expr) %in% rownames(annot_proteincoding),]
 expr <- log2((2**expr - 0.001) + 1)
 
 # Step 3: Filter Low/Zero Expression Genes
-# Count samples with expr >= 0.5 per transcript
-count_over_0_5 <- as.numeric(apply(expr, 1, function(i) sum(i >= 0.5)))
+# threshold for expr >= 0.5 per transcript
+thresh <- expr >= 0.5
 
-# Identify transcripts with sufficient expression levels
-keep_transcripts <- which(count_over_0_5 >= dim(expr)[2] * 0.3)
+# Identify and keep transcripts with sufficient expression levels
+keep <- rowSums(thresh) >= (0.3 * ncol(expr))
+expr <- expr[keep,]  # Dimensions: 15,857 x 148 - including 15k protein-coding
 
-# Filter for transcripts meeting criteria
-expr <- expr[keep_transcripts, ]    # Dimensions: 15,857 x 148 - including 15k protein-coding genes.
-
-# Display
+# Display expr
 DT::datatable(expr[1:8, 1:4])
 
 ```
 
-### Perform PCA:
+## Perform PCA
+
+- Calculate PCA
+- Then Merge PCA and Clinical Data Subset
 
 
 ```{r perform-pca}
 
+#1. PCA 
+
 # Transpose expr data for PCA , samples as rows and genes as columns.
-# Position samples as rows and genes as columns
 expr_t <- t(expr) #samples as rows and genes as columns
 
 # Calculate PCA 
@@ -116,28 +114,26 @@ var_res <- pc$sdev^2 / sum(pc$sdev^2) * 100
 var_res <- round(var_res, 2)  # Round to 2 decimal places
 
 print(var_res)
-```
 
-Merge PCA and Clinical Data Subset
+# 2. Merge PCA and Clinical Subset
 
-```{r merge-data}
-
-# Subsetting 'clin' data frame to include only 'patientid' and 'Institution' columns
-
-clin_subset <- clin[, c("patientid", "Institution")]
-clin_subsetresponse <-clin[, c("patientid", "response")]
-
-# Merge PCA results with clinical data
+# Convert PCA results to a data frame
 pcx <- data.frame(pc$x)
+
+# Add patient IDs from row names to the data frame
 pcx$patientid <- rownames(pcx)
 
 
-pcx_merge <- merge(pcx, clin_subset, by="patientid")
+# Merge PCA data with patient IDs and institutions from clinical data
+pcx_merge <- merge(pcx, clin[, c("patientid", "Institution")], by="patientid")
+
+# Set row names to patient IDs
 rownames(pcx_merge) <- pcx_merge[,1]
-pcx_merge <- pcx_merge[,-1] # institution column is added
+
+# Removeredundant patient ID column
+pcx_merge <- pcx_merge[,-1] 
 
 ```
-
 
 ## Visualization
 
@@ -153,11 +149,11 @@ The bar plot displays PC1 as the longest, explaining the most variance, while su
 barplot(var_res, main="Bar Plot", xlab="Principal Component", ylab="Percentage of Variance ", col="skyblue")
 ```
 
-### 1. PCA Results Plot
+## 1. PCA Results Plot
 
--  To visualize variance by each principal component.
+-  **Reason** :To visualize variance by each principal component.
 
-PCA on gene expression data, shows that the 'Institution' factor has no significant effect on gene expression data sampling.
+-  **Result** :PCA on gene expression data, shows that the 'Institution' factor has no significant effect on gene expression data sampling.
 (no Batch effect has been detected)
 
 
@@ -172,104 +168,124 @@ ggplot(pcx_merge, aes(PC1, PC2, color = Institution)) +
   geom_point() +
   labs(x = xlab_text, y = ylab_text)
 
+
 ```
 
-#### 2.Limma approach  
+## 2. Limma Approach
 
-- Used to find the differentially expressed genes between responders and non-responders
+- This approach is used to find differentially expressed genes between responders and non-responders.
+
+### Compare Responders and Nonresponders Using Limma Voom:
+
+1. **Analysis with `Harmonized_Confirmed_BOR_Bin`:**
+   - Apply limma voom for differential expression using the `Harmonized_Confirmed_BOR_Bin` from the clinical dataset, aiming to distinguish responders (PR/CR) from nonresponders (SD/PD). This was mentioned in paper method section **RNA-seq Differential Expression**
+
+2. **Analysis `response`:**
+   - Further differential expression analysis is conducted, utilizing the `response` classification obtained via the [`Get_Response`](https://github.com/BHKLAB-DataProcessing/ICB_Common/blob/main/code/Get_Response.R) script.
+  
 
 ```{r diff expression, include=TRUE, result = TRUE}
 
-# Remove rows with missing values in response and expression data
-na_response <- is.na(clin$response)
+# Filter expression data based on 'Harmonized_Confirmed_BOR_Bin' column in 'clin'
+bor_filtered <- clin$Harmonized_Confirmed_BOR_Bin[!is.na(clin$Harmonized_Confirmed_BOR_Bin)]
+expr_bor <- expr[, !is.na(clin$Harmonized_Confirmed_BOR_Bin)] # Remove 12 rows with missing responses
 
-# Create filtered response data by excluding rows with response missing values
-filtered_response <- clin$response[!na_response] 
+# Create design matrix and fit linear model
+design_bor <- model.matrix(~ bor_filtered)
+fit_bor <- lmFit(expr_bor, design_bor)
 
-# Access the expression data and exclude rows with missing response values
-filtered_expression <- expr[, !na_response] #27 rows removed due to missing response values
- 
+# Perform eBayes analysis and display results
+fit_bor <- eBayes(fit_bor)
+datatable(topTable(fit_bor))
 
-# Create a design matrix using the filtered response data
-design <- model.matrix(~ filtered_response)
+# Repeat process for 'response' column in 'clin'
+response_filtered <- clin$response[!is.na(clin$response)]
+expr_response <- expr[, !is.na(clin$response)] # Remove 27 rows with missing responses
 
-# Fit a linear model using the filtered expression data and the design matrix
-fit <- lmFit(filtered_expression, design)
+# Create design matrix and fit linear model
+design_response <- model.matrix(~ response_filtered)
+fit_response <- lmFit(expr_response, design_response)
 
-# Perform eBayes analysis
-fit <- eBayes(fit)
+# Perform eBayes analysis and display results
+fit_response <- eBayes(fit_response)
+datatable(topTable(fit_response))
 
-# To display the results in a table format, you can use 'datatable'
-datatable(topTable(fit))
+
 
 ```
 
-### 3. Volcano plot Prepration
+### 3. Volcano plot Prepration 
 
 - Preparing Data for volcano Plot 
 
-- Convert fit to Data frame and add column gene_name symbol
+- Convert fit, both `fit_bor` and `fit_response`, to Data frame and add column `gene_name` symbol 
 
 ```{r prepare volcano, include=TRUE, result = TRUE}
 
-# Retrieve all results from the analysis
-volcano_data <- topTable(fit, number=Inf) 
+# Retrieve all results from the analysis and convert
+volcano_data_res <- topTable(fit_bor, number=Inf)
+volcano_data_bor <- topTable(fit_bor, number=Inf)
 
 # Convert the result to a data frame
-df <- as.data.frame(volcano_data)
+df_res <- as.data.frame(volcano_data_res)
+df_bor <- as.data.frame(volcano_data_bor)
 
-# Subset 'gene_id' and 'gene_name' from the gene data
+# Subset 'gene_id_no_ver' and 'gene_name' from the gene data
 subset_annot <- annot_proteincoding[, c("gene_id_no_ver", "gene_name")]
 
 # Add a 'gene_id' column to the volcano_data
-volcano_data$gene_id <- rownames(volcano_data)
+volcano_data_res$gene_id_no_ver <- rownames(volcano_data_res)
+volcano_data_bor$gene_id_no_ver <- rownames(volcano_data_bor)
 
 # Merge 'volcano_data' and 'annot_proteincoding' by 'gene_id'
-merge_result <- merge(volcano_data, subset_annot, by.x= "gene_id", by.y = "gene_id_no_ver")
+merge_result_res <- merge(volcano_data_res, subset_annot, by = "gene_id_no_ver")
+merge_result_bor <- merge(volcano_data_bor, subset_annot, by = "gene_id_no_ver")
 
 # Display the merged result in a table format
-datatable(merge_result)
+datatable(merge_result_res)
+datatable(merge_result_bor)
 
 
 ```
 
-### Volcano Plot
+### Volcano plot
 
-```{r volcan plot, include=TRUE, result = TRUE ,fig.width=10, fig.height= 7 }
+Fig. 2 in the paper details a Volcano plot from limma voom analysis, displaying two-sided nominal P values. Genes are identified as significantly differentially expressed using cutoffs of `|log2(fold change)| > 0.5` and `P < 0.05`.
 
-# Volcano Plot based on P value 
-EnhancedVolcano(merge_result,
-    lab = merge_result$gene_name,
+
+
+```{r volcan plot, include=TRUE, result = TRUE ,fig.width= 12 , fig.height= 10 }
+
+# 1.Volcano Plot based on P value:
+
+# For merge_result_res:
+
+EnhancedVolcano(merge_result_res,
+    lab = merge_result_res$gene_name,
     x = 'logFC',
     y = 'P.Value',  
     pCutoff = 0.05,
-    FCcutoff = 1.5,
+    FCcutoff = 0.5,
     xlim = c(-5, 5),
     ylim = c(0, -log10(10e-4)),
-    title= 'Volcano Plot based on P value'
+    title= 'Volcano Plot based on P value (based on BOR)'
+    )
+
+# For merge_result_res:
+
+EnhancedVolcano(merge_result_bor,
+    lab = merge_result_bor$gene_name,
+    x = 'logFC',
+    y = 'P.Value',
+    pCutoff = 0.05,
+    FCcutoff = 0.5,
+    xlim = c(-5, 5),
+    ylim = c(0, -log10(10e-4)),
+    title= 'Volcano Plot based on P value (Based on response)'
     )
 
 
-# Volcano Plot based on FDR 
-
-
-EnhancedVolcano(merge_result,
-    lab = merge_result$gene_name,
-    x = 'logFC',
-    y = 'adj.P.Val',
-    pCutoff = 0.05,
-    FCcutoff = 1.5,
-    xlim = c(-5, 5),
-    ylim = c(0, -log10(10e-4)),
-    legendLabels=c('NS','Log FC','adj p-value',
-      'adj p-value & Log FC'),
-    title= 'Volcano Plot based on FDR',)
-
-
 ```
-
-
-
 ### 4. Figure 1(a) of paper
 
 - First 1.(a)_RNA cohort in different institutions.

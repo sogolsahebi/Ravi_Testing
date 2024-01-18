@@ -24,15 +24,9 @@ case <- read.csv(file_path, sep = ";")
 # Filter the 'expr' dataset to include only patients with expr value of 1 in the 'case' dataset
 expr <- expr[ , case[case$expr %in% 1,]$patient]
 
-# Check the range of data values
-range(expr) # Range: 0 - 214022
-
 # Data Transformation
 # Convert TPM data to log2-TPM for consistency with other data formats
 expr <- log2(expr + 0.001)
-
-# Check the updated range of data values
-range(expr) # Range:  -9.965784 - 17.707400
 
 # Save expr as csv file, EXPR.csv.
 #write.table( tpm , file= file.path(output_dir, "EXPR.csv") , quote=FALSE , sep=";" , col.names=TRUE , row.names=TRUE )
