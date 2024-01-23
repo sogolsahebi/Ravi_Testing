@@ -22,6 +22,7 @@ library(EnhancedVolcano)
 library(DT)
 library(RColorBrewer)
 library(readr)
+library(ggVennDiagram)
 ```
 
 
@@ -266,7 +267,7 @@ EnhancedVolcano(merge_result_res,
     y = 'P.Value',  
     pCutoff = 0.05,
     FCcutoff = 0.5,
-    xlim = c(-5, 5),
+    xlim = c(-2, 2),
     ylim = c(0, -log10(10e-4)),
     title= 'Volcano Plot based on P value (based on BOR)'
     )
@@ -279,77 +280,10 @@ EnhancedVolcano(merge_result_bor,
     y = 'P.Value',
     pCutoff = 0.05,
     FCcutoff = 0.5,
-    xlim = c(-5, 5),
+    xlim = c(-2, 2),
     ylim = c(0, -log10(10e-4)),
     title= 'Volcano Plot based on P value (Based on response)'
     )
-
-
-```
-### 4. Figure 1(a) of paper
-
-- First 1.(a)_RNA cohort in different institutions.
-
-```{r piechart , include=TRUE, result = TRUE}
-
-
-clin <- data.frame(colData(mae))
-clin_subset <-clin[,c("Institution","rna")]
-
-
-# Counting the occurrences of each institution
-institution_counts <- table(clin_subset$Institution)
-
-# Creating the pie chart
-pie_chart <- ggplot(clin_subset, aes(x = "", fill = factor(Institution))) +
-  geom_bar(width = 1, stat = "count") +
-  coord_polar("y", start = 0) +
-  theme_void() +
-  theme(legend.title = element_blank()) +
-  scale_fill_manual(values = c("#999999", "#E69F00", "#56B4E9",
-                               "#009E73", "#F0E442", "#0072B2",
-                               "#D55E00", "#CC79A7", "#999999",
-                               "#999999", "#999999", "#999999",
-                               "#999999", "#999999", "#999999"))
-
-# Printing the pie chart
-print(pie_chart)
-
-```
-
-### 5. Figure 1(b) of paper
-
-
-Figure 1(b):BOR/recist by PDL1 TPS category.
-
-
-```{r bar plot, include=TRUE, result = TRUE}
-
-
-# Select only the necessary columns
-clin <- clin[, c("PDL1_TPS_Description", "recist", "PDL1_TPS")]
-
-# Convert NA values to a specific level
-clin$PDL1_TPS_Description <- forcats::fct_explicit_na(clin$PDL1_TPS_Description, na_level = "Unknown")
-clin$PDL1_TPS_Description <- factor(clin$PDL1_TPS_Description, levels = c("<1%", "1-49%", ">50%", "Unknown"))
-
-clin$recist <- forcats::fct_explicit_na(clin$recist, na_level = "NE")
-
-# Count the occurrences of combinations of 'PDL1_TPS_Description' and 'recist'
-# Note: Do not quote the column names
-counted_data <- dplyr::count(clin, PDL1_TPS_Description, recist)
-
-# Group by 'PDL1_TPS_Description' and calculate frequencies
-grouped_data <- group_by(counted_data, PDL1_TPS_Description)
-data_summary <- mutate(grouped_data, freq = n / sum(n))
-
-# Plotting
-ggplot(data_summary, aes(x = PDL1_TPS_Description, y = freq, fill = recist)) +
-  geom_bar(stat = "identity") +
-  scale_y_continuous(labels = scales::percent) +
-  labs(x = "PDL1 TPS", y = "BOR Proportion", fill = "RECIST Category") +
-  geom_text(aes(label = scales::percent(freq)), position = position_stack(vjust = 0.5)) +
-  theme_minimal()
 
 
 ```
