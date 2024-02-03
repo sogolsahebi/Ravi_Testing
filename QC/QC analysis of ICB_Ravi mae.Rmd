@@ -11,7 +11,7 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 ```
 
 
-# load libraries
+## load libraries
 
 ```{r libraries}
 library(ggplot2)
@@ -26,7 +26,7 @@ library(ggVennDiagram)
 ```
 
 
-# Data Loading and Preparation
+## Data Loading and Preparation
 
 **Data Overview**:
 
@@ -43,7 +43,7 @@ Load multiassay .rds file, extract clinical, expression and annotations data; pr
 # Load your multiassay result and extract clinical data , expression data and annotation
 
 #load mae obj
-mae <- readRDS("~/BHK lab/Ravi_Testing/output/ICB_Raviii.rds")
+mae <- readRDS("~/BHK lab/Ravi_Testing/output/ICB_Ravi.rds")
 
 #extract Clinical data 
 clin <- data.frame(colData(mae))
@@ -58,7 +58,7 @@ annot <- data.frame(rowData(mae@ExperimentList$expr))
 DT::datatable(expr[1:8, 1:4])
 ```
 
-# Principal Component Analysis (PCA)
+## Principal Component Analysis (PCA)
 
 **Objective**: Perform PCA on gene expression data to assess variation across different research centers. 
 
@@ -94,7 +94,7 @@ DT::datatable(expr[1:8, 1:4])
 
 ```
 
-## Perform PCA
+### Perform PCA
 
 - Calculate PCA
 - Then Merge PCA and Clinical Data Subset
@@ -136,7 +136,7 @@ pcx_merge <- pcx_merge[,-1]
 
 ```
 
-## Visualization
+### Visualization
 
 
 - **Bar Plot** : To visualize variance by each principal component.
@@ -150,7 +150,7 @@ The bar plot displays PC1 as the longest, explaining the most variance, while su
 barplot(var_res, main="Bar Plot", xlab="Principal Component", ylab="Percentage of Variance ", col="skyblue")
 ```
 
-## 1. PCA Results Plot
+### 1. PCA Results Plot
 
 -  **Reason** :To visualize variance by each principal component.
 
@@ -172,7 +172,7 @@ ggplot(pcx_merge, aes(PC1, PC2, color = Institution)) +
 
 ```
 
-## 2. Limma Approach
+### 2. Limma Approach
 
 - This approach is used to find differentially expressed genes between responders and non-responders.
 
